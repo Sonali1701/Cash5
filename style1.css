@@ -1,0 +1,956 @@
+/* style1.css - Dedicated styles for Cash 5 game */
+
+body.cash5 {
+    background: #f7fafc;
+    margin: 0;
+    padding: 20px 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+.container.main-flex {
+    display: flex;
+    flex-direction: row;
+    max-width: 1200px;
+    margin: 28px auto 0 auto;
+    padding: 0 10px 32px 10px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(44,62,80,0.08);
+    min-height: 60vh;
+    gap: 36px;
+}
+.center-col {
+    flex: 3 1 0;
+    min-width: 400px;
+    max-width: 680px;
+    padding: 16px 0 0 0;
+    align-items: flex-start !important;
+    justify-content: flex-start;
+    display: flex;
+    flex-direction: column;
+    margin-right: 32px;
+    z-index: 1;
+}
+.results-table,
+.results-table.cash5-wide {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    align-self: flex-start !important;
+}
+.results-table.cash5-wide {
+    max-width: 660px;
+    margin-right: 0;
+}
+.right-col {
+    flex: 1 1 180px;
+    min-width: 230px;
+    padding-top: 16px;
+    border-left: 2px solid #eafbe7;
+    margin-left: 0;
+    z-index: 2;
+    background: #fff;
+}
+.combo-gap { height: 32px; width: 100%; display: block; }
+/* Base responsive styles */
+@media (max-width: 1024px) {
+    .container.main-flex {
+        flex-direction: column;
+        padding: 0 15px;
+    }
+    
+    .center-col, .right-col {
+        width: 100%;
+        max-width: 100%;
+        min-width: auto;
+        padding: 16px 0;
+    }
+    
+    .right-col {
+        border-left: none;
+        border-top: 2px solid #eafbe7;
+        margin-top: 20px;
+        padding-top: 25px;
+    }
+    
+    .results-table.cash5-wide {
+        max-width: 100%;
+        overflow-x: auto;
+        display: block;
+    }
+    
+    .ball-panel {
+        padding: 0 10px;
+    }
+    
+    .ball {
+        width: 40px;
+        height: 40px;
+        line-height: 36px;
+        font-size: 16px;
+        margin: 3px;
+    }
+    
+    .lottery-banner {
+        font-size: 1.5em;
+        padding: 12px 0;
+    }
+}
+
+/* Tablet specific styles */
+@media (min-width: 601px) and (max-width: 1024px) {
+    .container.main-flex {
+        padding: 0 20px;
+    }
+    
+    .ball {
+        width: 44px;
+        height: 44px;
+        line-height: 40px;
+        margin: 4px;
+    }
+}
+
+/* Mobile specific styles */
+@media (max-width: 600px) {
+    .container.main-flex {
+        margin-top: 15px;
+        padding: 0 10px;
+    }
+    
+    .lottery-banner {
+        font-size: 1.3em;
+        padding: 10px 0;
+        letter-spacing: 1px;
+    }
+    
+    .ball {
+        width: 38px;
+        height: 38px;
+        line-height: 34px;
+        font-size: 15px;
+        margin: 2px;
+    }
+    
+    .tab-button {
+        padding: 8px 12px;
+        font-size: 14px;
+        margin: 0 3px 5px 0;
+    }
+    
+    .generator-panel {
+        padding: 15px;
+    }
+    
+    .generator-panel select, 
+    .generator-panel button,
+    .generator-panel input {
+        width: 100%;
+        margin-bottom: 10px !important;
+    }
+    
+    .search-container {
+        flex-direction: column;
+    }
+    
+    .search-container input,
+    .search-container button {
+        width: 100%;
+        margin: 5px 0;
+    }
+}
+.right-col {
+    flex: 1 1 180px;
+    min-width: 230px;
+    padding-top: 16px;
+    border-left: 2px solid #eafbe7;
+    margin-left: 0;
+}
+.left-col, .right-col {
+    flex: 1 1 180px;
+    min-width: 170px;
+    padding-top: 16px;
+}
+.center-col {
+    flex: 3 1 0;
+    min-width: 320px;
+    padding: 16px 0 0 0;
+}
+
+.ball-panel {
+    margin: 0 auto 16px auto;
+    max-width: 650px;
+}
+
+.lottery-banner {
+    background: linear-gradient(90deg, #ffe066 0%, #27ae60 100%) !important;
+    color: #234;
+    font-size: 2em;
+    font-weight: bold;
+    text-align: center;
+    padding: 18px 0 10px 0;
+    letter-spacing: 2px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+    margin-bottom: 12px;
+    border-bottom: 4px solid #27ae60;
+}
+
+.tab-nav {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-start;
+    margin: 0 auto 18px auto;
+    max-width: 1200px;
+    padding: 0 10px;
+}
+.tab-btn {
+    padding: 7px 18px;
+    border: 1.5px solid #27ae60;
+    border-radius: 7px;
+    background: #fff;
+    color: #27ae60;
+    font-size: 1.01em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border 0.15s;
+    margin-bottom: 2px;
+}
+.tab-btn.active, .tab-btn:hover, .tab-btn:focus {
+    background: #27ae60;
+    color: #fff;
+    border-color: #27ae60;
+}
+
+
+
+.powerball-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 6px;
+    margin: 10px 0;
+}
+
+.legend {
+    font-size: 14px;
+    color: #666;
+    margin: 5px 0;
+    font-weight: 500;
+}
+
+.powerball-label {
+    font-weight: bold;
+    color: #555;
+    margin-bottom: 5px;
+    display: block;
+}
+
+
+.results-table {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 6px rgba(44,62,80,0.07);
+    margin-bottom: 24px;
+    padding: 0 8px;
+    font-size: 1.08em;
+    width: 100%;
+    border-collapse: collapse;
+}
+.results-table th, .results-table td {
+    padding: 14px 10px;
+    font-size: 1.08em;
+    border-bottom: 1px solid #eaeaea;
+    text-align: center;
+}
+.results-table th {
+    background: #f8faff;
+    color: #27ae60;
+}
+
+#cash5-custom-note-combo, #cash5-custom-note-2x, #cash5-custom-note-new {
+    background: #f8faff;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(44,62,80,0.07);
+    padding: 12px 8px 18px 8px;
+    margin: 24px 0 18px 0;
+    min-height: 80px;
+    text-align: center;
+    font-size: 1.13em;
+    color: #555;
+    width: 100%;
+}
+textarea[id^='cash5-note-textarea-'] {
+    width: 98%;
+    min-height: 120px;
+    font-size: 1.13em;
+    border-radius: 8px;
+    border: 1.5px solid #e0e0e0;
+    padding: 8px;
+    resize: vertical;
+    margin-bottom: 8px;
+}
+button[id^='cash5-download-note-btn-'], #cash5-download-combo-csv-btn {
+    display: block;
+    margin: 10px auto 0 auto;
+    font-size: 0.98em;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1.5px solid #27ae60;
+    background: #fff;
+    color: #27ae60;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.15s, color 0.15s, border 0.15s;
+}
+button[id^='cash5-download-note-btn-']:hover, #cash5-download-combo-csv-btn:hover {
+    background: #27ae60;
+    color: #fff;
+    border-color: #27ae60;
+}
+
+/* Download Buttons Container */
+.download-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+/* Frequency buttons */
+.freq-btn {
+    padding: 8px 15px;
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    color: #2c3e50;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.freq-btn:hover {
+    background-color: #e9ecef;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.freq-btn.active {
+    background-color: #27ae60;
+    color: white;
+    border-color: #219653;
+}
+
+/* Base Button Style */
+.download-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 16px;
+    font-size: 0.95em;
+    font-weight: 600;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    white-space: nowrap;
+    background-color: #f8f9fa;
+    color: #2c3e50;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Button Hover & Active States */
+.download-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    background-color: #fff;
+}
+
+.download-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* Specific Button Types */
+#cash5-download-pairs-trios-csv-btn {
+    background-color: #e8f5e9;
+    border-color: #81c784;
+    color: #2e7d32;
+}
+
+#cash5-download-quads-csv-btn {
+    background-color: #e3f2fd;
+    border-color: #90caf9;
+    color: #1565c0;
+}
+
+#cash5-download-fives-csv-btn {
+    background-color: #f3e5f5;
+    border-color: #ce93d8;
+    color: #7b1fa2;
+}
+
+/* Button Icons */
+.download-btn::before {
+    content: '📊';
+    margin-right: 6px;
+    font-size: 1.1em;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .download-buttons {
+        flex-direction: column;
+    }
+    
+    .download-btn {
+        width: 100%;
+        padding: 12px 16px;
+    }
+}
+
+.show-more-btn {
+  display: block;
+  margin: 12px auto 18px auto;
+  padding: 8px 22px;
+  font-size: 1.08em;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(90deg, #27ae60 0%, #2ecc71 100%);
+  border: none;
+  border-radius: 24px;
+  box-shadow: 0 2px 8px rgba(39,174,96,0.12);
+  cursor: pointer;
+  transition: background 0.18s, box-shadow 0.18s, color 0.18s, transform 0.13s;
+  outline: none;
+}
+.show-more-btn:hover, .show-more-btn:focus {
+  background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%);
+  color: #fff;
+  box-shadow: 0 4px 18px rgba(39,174,96,0.18);
+  transform: translateY(-2px) scale(1.04);
+}
+.show-more-btn:active {
+  background: #219150;
+  color: #eaf3fb;
+  transform: scale(0.97);
+}
+
+@media (max-width: 900px) {
+    .container.main-flex {
+        flex-direction: column;
+        padding: 0 2px 24px 2px;
+    }
+    .left-col, .center-col, .right-col {
+        min-width: 0;
+        padding: 0;
+    }
+    .ball-panel {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 600px) {
+    .lottery-banner {
+        font-size: 1.2em;
+        padding: 10px 0 6px 0;
+    }
+    .tab-nav {
+        flex-direction: column;
+        gap: 4px;
+        padding: 0 2px;
+    }
+    .container.main-flex {
+        padding: 0 0 16px 0;
+        border-radius: 8px;
+    }
+    .powerball-selection {
+        padding: 7px 0 5px 0;
+        border-radius: 6px;
+    }
+    .powerball-grid {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 4px;
+    }
+}
+
+.lottery-banner {
+    background: linear-gradient(90deg, #ffe066 0%, #27ae60 100%) !important;
+    color: #234;
+    font-size: 2em;
+    font-weight: bold;
+    text-align: center;
+    padding: 18px 0 10px 0;
+    letter-spacing: 2px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+    margin-bottom: 8px;
+    border-bottom: 4px solid #27ae60;
+}
+
+/* Ball Selection Panel */
+.generator-panel {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* Search container styles */
+.search-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.search-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.95em;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #27ae60;
+    box-shadow: 0 0 0 2px rgba(39, 174, 96, 0.2);
+}
+
+/* Style for select dropdowns with search */
+.duo-select {
+    width: 100%;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background-color: #fff;
+    font-size: 0.95em;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.duo-select:focus {
+    border-color: #27ae60;
+    box-shadow: 0 0 0 2px rgba(39, 174, 96, 0.2);
+    outline: none;
+}
+
+.duo-select-label {
+    display: block;
+    margin: 8px 0 4px 0;
+    font-size: 0.95em;
+    color: #444;
+    font-weight: 500;
+}
+
+/* Search container styles */
+.search-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.search-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.95em;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #27ae60;
+    box-shadow: 0 0 0 2px rgba(39, 174, 96, 0.2);
+}
+
+/* Style for select dropdowns with search */
+.duo-select {
+    width: 100%;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background-color: #fff;
+    font-size: 0.95em;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.duo-select:focus {
+    border-color: #27ae60;
+    box-shadow: 0 0 0 2px rgba(39, 174, 96, 0.2);
+    outline: none;
+}
+
+.duo-select-label {
+    display: block;
+    margin: 8px 0 4px 0;
+    font-size: 0.95em;
+    color: #444;
+    font-weight: 500;
+}
+
+.powerball-label {
+    font-size: 14px;
+    color: #666;
+    margin: 0 0 12px 0;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.powerball-grid {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 8px 0 12px 0;
+    gap: 8px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #ccc transparent;
+    margin: 0 -4px;
+}
+
+.powerball-grid::-webkit-scrollbar {
+    height: 6px;
+}
+
+.powerball-grid::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 3px;
+}
+
+/* Ball Styles */
+.ball {
+    flex: 0 0 38px;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 15px;
+    cursor: pointer;
+    user-select: none;
+    color: #333;
+    margin: 0;
+    border: 2px solid #e0e0e0;
+    transition: all 0.15s ease;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.ball:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3);
+    border-color: #a0c4e4;
+}
+
+.ball.selected {
+    background: #e74c3c;
+    color: white;
+    border-color: #c0392b;
+    box-shadow: 0 2px 6px rgba(231, 76, 60, 0.3);
+}
+
+.ball.selected:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.4);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .ball {
+        flex: 0 0 36px;
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+    }
+    
+    .powerball-selection {
+        padding: 12px 15px;
+        margin: 0 0 16px;
+    }
+    
+    .powerball-grid {
+        gap: 6px;
+    }
+}
+
+.powerball-label {
+    font-weight: bold;
+    color: #27ae60;
+    margin-bottom: 5px;
+    display: block;
+}
+
+.powerball-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 6px;
+    margin: 10px 0;
+}
+
+.ball {
+    background: #fff;
+    border: 2px solid #27ae60;
+    color: #27ae60;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1em;
+    font-weight: bold;
+    margin: 0 2px;
+    line-height: 32px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, border 0.2s;
+}
+.ball.selected {
+    background: #27ae60;
+    color: #fff;
+    border: 2px solid #27ae60;
+}
+
+.results-table {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 6px rgba(44,62,80,0.07);
+    margin-bottom: 24px;
+    padding: 0 8px;
+    font-size: 1.08em;
+    width: 100%;
+    border-collapse: collapse;
+}
+.results-table th, .results-table td {
+    padding: 14px 10px;
+    font-size: 1.08em;
+    border-bottom: 1px solid #eaeaea;
+    text-align: center;
+}
+.results-table th {
+    background: #f8faff;
+    color: #27ae60;
+}
+
+.generated-ball {
+    display: inline-block;
+    background: #27ae60;
+    color: #fff;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    text-align: center;
+    line-height: 36px;
+    font-size: 1.2em;
+    font-weight: bold;
+    margin: 0 4px;
+}
+
+/* Notes panel for Cash 5 */
+
+/* --- Cash 5 Random Tab Enhanced Styles (appended for override) --- */
+
+/* --- Cash 5 Combo & New Tab Result Table Enhancements --- */
+.results-table.cash5-wide {
+    min-width: 720px;
+    width: 100%;
+    table-layout: fixed;
+    word-break: keep-all;
+    margin-bottom: 28px;
+}
+.results-table.cash5-wide th, .results-table.cash5-wide td {
+    font-size: 1.13em;
+    padding: 14px 16px;
+    text-align: center;
+    white-space: nowrap;
+}
+.results-table .ball, .results-table .plain-number {
+    font-weight: 700;
+    font-size: 1.18em;
+    letter-spacing: 0.06em;
+    margin: 0 3px;
+    display: inline-block;
+    min-width: 34px;
+    min-height: 34px;
+    line-height: 34px;
+    border-radius: 50%;
+    background: #f8fff5;
+    color: #27ae60;
+    border: 2px solid #b6e6c9;
+    box-shadow: 0 1px 4px rgba(39,174,96,0.08);
+    transition: background 0.13s, color 0.13s, border 0.13s;
+}
+.results-table .ball.selected {
+    background: #27ae60;
+    color: #fff;
+    border: 2.5px solid #27ae60;
+}
+.results-table tr:hover td {
+    background: #eafbe7;
+    cursor: pointer;
+    transition: background 0.13s;
+}
+.results-table-interactive tr.selected td {
+    background: #b6e6c9 !important;
+    color: #234 !important;
+}
+.results-table td {
+    font-weight: 600;
+    user-select: text;
+}
+@media (max-width: 900px) {
+    .results-table.cash5-wide {
+        min-width: 0;
+        font-size: 1em;
+        word-break: break-word;
+        table-layout: auto;
+    }
+    .results-table .ball, .results-table .plain-number {
+        min-width: 26px;
+        min-height: 26px;
+        font-size: 1em;
+        line-height: 26px;
+    }
+}
+
+.generator-panel {
+    background: #f8fff5 !important;
+    border-radius: 18px !important;
+    box-shadow: 0 4px 24px rgba(39,174,96,0.08) !important;
+    padding: 32px 20px 26px 20px !important;
+    margin-bottom: 32px !important;
+    text-align: center;
+    width: 100%;
+    border: 1.5px solid #b6e6c9 !important;
+    transition: box-shadow 0.15s;
+}
+.generator-panel:hover {
+    box-shadow: 0 6px 28px rgba(39,174,96,0.16) !important;
+}
+.generator-panel h2 {
+    font-size: 1.23em !important;
+    margin: 0 0 18px 0 !important;
+    color: #27ae60 !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.2px !important;
+    line-height: 1.18 !important;
+}
+.duo-select-label {
+    font-size: 1.08em !important;
+    color: #27ae60 !important;
+    font-weight: 600 !important;
+    margin: 0 6px 0 0 !important;
+    letter-spacing: 0.1px !important;
+}
+.duo-select {
+    font-size: 1.08em !important;
+    padding: 7px 12px !important;
+    border-radius: 7px !important;
+    border: 1.5px solid #b6e6c9 !important;
+    background: #fff !important;
+    color: #27ae60 !important;
+    margin: 0 14px 0 0 !important;
+    font-weight: 600 !important;
+    transition: border 0.15s, box-shadow 0.15s !important;
+}
+.duo-select:focus {
+    border-color: #27ae60 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px #b6e6c9 !important;
+}
+.cash5-multi-gen-btn, .cash5-freq-gen-btn {
+    background: linear-gradient(90deg, #27ae60 0%, #2ecc71 100%) !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 10px !important;
+    padding: 11px 22px !important;
+    font-size: 1.12em !important;
+    font-weight: 700 !important;
+    margin: 0 10px 10px 0 !important;
+    cursor: pointer !important;
+    box-shadow: 0 2px 8px rgba(39,174,96,0.10) !important;
+    transition: box-shadow 0.15s, background 0.15s, color 0.15s, transform 0.13s !important;
+}
+.cash5-multi-gen-btn:disabled, .cash5-freq-gen-btn:disabled {
+    background: #e0e7ef !important;
+    color: #b6e6c9 !important;
+    cursor: not-allowed !important;
+}
+.cash5-multi-gen-btn:hover:not(:disabled), .cash5-freq-gen-btn:hover:not(:disabled) {
+    background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 18px rgba(39,174,96,0.18) !important;
+    transform: translateY(-2px) scale(1.04) !important;
+}
+.result-card {
+    background: #fff !important;
+    border-radius: 14px !important;
+    box-shadow: 0 2px 12px rgba(39,174,96,0.11) !important;
+    padding: 18px 16px 16px 16px !important;
+    margin: 18px auto 0 auto !important;
+    max-width: 410px !important;
+    text-align: center !important;
+    border: 1.5px solid #b6e6c9 !important;
+    animation: fade-in 0.4s !important;
+}
+.result-title {
+    font-size: 1.13em !important;
+    color: #27ae60 !important;
+    font-weight: 700 !important;
+    margin-bottom: 10px !important;
+    letter-spacing: 0.1px !important;
+}
+@keyframes fade-in {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: none; }
+}
+.generated-ball, .ball.selected {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: #27ae60 !important;
+    color: #fff !important;
+    border-radius: 50% !important;
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 1.28em !important;
+    font-weight: 700 !important;
+    margin: 0 6px 6px 0 !important;
+    box-shadow: 0 2px 8px rgba(39,174,96,0.13) !important;
+    border: 2.5px solid #b6e6c9 !important;
+    transition: background 0.15s, color 0.15s !important;
+}
+.ball.selected {
+    border: 2.5px solid #27ae60 !important;
+}
+@media (max-width: 700px) {
+    .generator-panel {
+        padding: 13px 2px 10px 2px !important;
+        border-radius: 10px !important;
+    }
+    .result-card {
+        padding: 12px 5px 10px 5px !important;
+        border-radius: 8px !important;
+    }
+    .generated-ball, .ball.selected {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 1em !important;
+        margin: 0 4px 4px 0 !important;
+    }
+}
+.generator-panel select, .generator-panel button {
+    margin-bottom: 8px !important;
+}
+
+#cash5-custom-note-combo, #cash5-custom-note-2x, #cash5-custom-note-new {
+    background: #f8faff;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(44,62,80,0.07);
+    padding: 12px 8px;
+}
