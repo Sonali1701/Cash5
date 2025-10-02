@@ -2784,6 +2784,15 @@ window.initCash5RandomTab = function() {
             renderCash5PatternedCombinations();
         };
     }
+    
+    // 15 + 3 High Numbers Generator button
+    const generate15AndHighBtn = document.getElementById('cash5-generate-15-last3-20s');
+    if (generate15AndHighBtn) {
+        // Update button text and tooltip
+        generate15AndHighBtn.textContent = '15 + 3 High (30-42)';
+        generate15AndHighBtn.title = 'Generate combinations with 15 and 3 high numbers (30-42)';
+        generate15AndHighBtn.onclick = generate15AndHighNumbers;
+    }
 
     // Two Duos Generator
     const duo1 = document.getElementById('cash5-duo1-select');
@@ -2952,6 +2961,300 @@ function renderCash5RandomBallPanel() {
     });
 }
 
+    // Function to check if a combination has appeared in historical data
+    function checkHistoricalMatch(combo, historicalData) {
+        if (!historicalData || !Array.isArray(historicalData)) return { found: false };
+        
+        const matches = [];
+        
+        for (const draw of historicalData) {
+            if (!draw.mainArr || !Array.isArray(draw.mainArr)) continue;
+            
+            // Check if all numbers in the combo exist in this draw
+            const match = combo.every(num => draw.mainArr.includes(num));
+            if (match) {
+                matches.push({
+                    date: draw['Draw Date'] || 'Unknown date',
+                    numbers: [...draw.mainArr]
+                });
+            }
+        }
+        
+        return {
+            found: matches.length > 0,
+            matches: matches,
+            count: matches.length
+        };
+    }
+    
+    // Helper function to parse dates from the CSV
+    function parseDate(dateStr) {
+        if (!dateStr) return null;
+        
+        // Parse the date string (format: M/D/YYYY or MM/DD/YYYY)
+        const [month, day, year] = dateStr.split('/').map(Number);
+        const date = new Date(year, month - 1, day);
+        
+        // Return the date object if valid, otherwise return null
+        return !isNaN(date.getTime()) ? date : null;
+    }
+    
+    // Helper function to format date as MM/DD/YYYY
+    function formatDate(date) {
+        if (!(date instanceof Date) || isNaN(date.getTime())) return 'Unknown date';
+        
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const year = date.getFullYear();
+        
+        return `${month}/${day}/${year}`;
+    }
+    
+    // Function to count occurrences of duos in historical data
+    function countDuoOccurrences(historicalData) {
+        const duoCounts = new Map();
+        
+        historicalData.forEach(draw => {
+            if (!draw.mainArr || !Array.isArray(draw.mainArr)) return;
+            
+            const numbers = draw.mainArr;
+            const drawDate = parseDate(draw.date);
+            
+            // Get all possible duos from this draw
+            for (let i = 0; i < numbers.length; i++) {
+                for (let j = i + 1; j < numbers.length; j++) {
+                    const duo = [numbers[i], numbers[j]].sort((a, b) => a - b);
+                    const duoKey = duo.join('_');
+                    
+                    if (!duoCounts.has(duoKey)) {
+                        duoCounts.set(duoKey, {
+                            numbers: duo,
+                            count: 0,
+                            lastSeen: null
+                        });
+                    }
+                    
+                    const duoInfo = duoCounts.get(duoKey);
+                    duoInfo.count++;
+                    
+                    // Update last seen date if current draw is more recent
+                    if (drawDate) {
+                        if (!duoInfo.lastSeen || drawDate > duoInfo.lastSeen) {
+                            duoInfo.lastSeen = new Date(drawDate);
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Convert to array and filter for duos that appear more than 2 times
+        return Array.from(duoCounts.values())
+            .filter(duo => duo.count > 2)
+            .sort((a, b) => b.count - a.count); // Sort by count descending
+    }
+    
+    // Function to generate combinations with 15 and 3 numbers in 30-42 range
+    function generate15AndHighNumbers() {
+        const resultsDiv = document.getElementById('cash5-generated-table');
+        if (!resultsDiv) return;
+        
+        // Get historical data
+        const historicalData = window.cash5DrawRows || [];
+        
+        // Get all duos that appear more than 2 times
+        const frequentDuos = countDuoOccurrences(historicalData);
+        
+        // Filter for duos containing 15 and appearing more than 2 times
+        const frequentDuosWith15 = frequentDuos.filter(duo => 
+            duo.numbers.includes(15) && duo.count > 2
+        );
+        
+        // Extract all trios containing 15 from historical data
+        const triosWith15 = [];
+        
+        historicalData.forEach(draw => {
+            if (!draw.mainArr || !Array.isArray(draw.mainArr) || !draw.mainArr.includes(15)) return;
+            
+            const otherNumbers = draw.mainArr.filter(n => n !== 15);
+            
+            // Get all possible trios with 15
+            for (let i = 0; i < otherNumbers.length; i++) {
+                for (let j = i + 1; j < otherNumbers.length; j++) {
+                    const trio = [15, otherNumbers[i], otherNumbers[j]];
+                    triosWith15.push({
+                        numbers: trio,
+                        date: draw['Draw Date']
+                    });
+                }
+            }
+        });
+        
+        // Clear previous results
+        resultsDiv.innerHTML = '';
+        
+        // Generate 10 combinations
+        let html = '<div class="results-grid">';
+        const usedCombos = new Set();
+        
+        for (let i = 0; i < 10; i++) {
+            let combo = [15];
+            let source = 'random';
+            let sourceDate = null;
+            let patternInfo = null; // Will store either duo or trio info
+            
+            // 70% chance to use a frequent duo (if available), 30% chance for trio
+            const useDuo = frequentDuosWith15.length > 0 && Math.random() < 0.7;
+            
+            if (useDuo) {
+                // Use a random frequent duo with 15
+                const randomDuo = frequentDuosWith15[Math.floor(Math.random() * frequentDuosWith15.length)];
+                combo = [...randomDuo.numbers];
+                source = 'frequent duo';
+                sourceDate = randomDuo.lastSeen || 'Unknown date';
+                patternInfo = { type: 'duo', data: randomDuo };
+            } else if (triosWith15.length > 0) {
+                // Use a random historical trio
+                const randomTrio = triosWith15[Math.floor(Math.random() * triosWith15.length)];
+                combo = [...randomTrio.numbers];
+                source = 'frequent trio';
+                sourceDate = randomTrio.date;
+                patternInfo = { type: 'trio', data: randomTrio };
+                
+                // Count occurrences and find most recent date for this trio
+                const sortedTrio = [...randomTrio.numbers].sort((a, b) => a - b);
+                const trioKey = sortedTrio.join('_');
+                let lastSeenDate = null;
+                let trioCount = 0;
+                
+                historicalData.forEach(draw => {
+                    if (!draw.mainArr) return;
+                    const drawNums = new Set(draw.mainArr);
+                    const hasAllNumbers = randomTrio.numbers.every(n => drawNums.has(n));
+                    
+                    if (hasAllNumbers) {
+                        trioCount++;
+                        const drawDate = parseDate(draw.date);
+                        if (drawDate && (!lastSeenDate || drawDate > lastSeenDate)) {
+                            lastSeenDate = drawDate;
+                        }
+                    }
+                });
+                
+                // Update the trio info with count and last seen date
+                patternInfo.data.count = trioCount;
+                patternInfo.data.lastSeen = lastSeenDate || randomTrio.date;
+            }
+            
+            // Ensure we have exactly 3 numbers in 30-42 range
+            const highNumbers = [];
+            const lowNumbers = [];
+            
+            // Separate high (30-42) and low (1-29) numbers
+            combo.forEach(num => {
+                if (num >= 30 && num <= 42) {
+                    highNumbers.push(num);
+                } else if (num !== 15) {
+                    lowNumbers.push(num);
+                }
+            });
+            
+            // Fill remaining numbers to make sure we have 3 high numbers
+            while (highNumbers.length < 3 && combo.length < 5) {
+                const num = Math.floor(Math.random() * 13) + 30; // 30-42
+                if (!combo.includes(num)) {
+                    highNumbers.push(num);
+                    combo.push(num);
+                }
+            }
+            
+            // Fill remaining numbers (if any) with low numbers
+            while (combo.length < 5) {
+                const num = Math.floor(Math.random() * 29) + 1; // 1-29
+                if (!combo.includes(num) && num !== 15) {
+                    lowNumbers.push(num);
+                    combo.push(num);
+                }
+            }
+            
+            // Sort the numbers (15 first, then high numbers, then low numbers)
+            const sortedCombo = [
+                15,
+                ...highNumbers.sort((a, b) => a - b),
+                ...lowNumbers.sort((a, b) => a - b)
+            ].slice(0, 5); // Ensure we only have 5 numbers
+            
+            // Check if we've already used this combo
+            const comboKey = sortedCombo.join('_');
+            if (usedCombos.has(comboKey)) {
+                i--; // Try again if duplicate
+                continue;
+            }
+            
+            usedCombos.add(comboKey);
+            
+            // Check if this combination has appeared in historical data
+            const historicalMatch = checkHistoricalMatch(sortedCombo, historicalData);
+            
+            // Format the numbers with special styling
+            const formattedCombo = sortedCombo.map((num, idx) => {
+                const is15 = num === 15;
+                const isHigh = num >= 30 && num <= 42;
+                let className = 'ball';
+                if (is15) className += ' selected';
+                if (isHigh) className += ' powerball';
+                
+                return `<span class="${className}" style="${is15 ? 'background: #e74c3c;' : ''}${isHigh ? 'background: #9b59b6;' : ''}" title="${is15 ? 'Starts with 15' : isHigh ? 'High number (30-42)' : ''}">${num}</span>`;
+            }).join('');
+            
+            // Add source and historical match info
+            let infoHtml = '';
+            if (source !== 'random') {
+                infoHtml += `<div class="source-info" style="font-size:0.8em; color:#666; margin-top:4px;">From ${source}</div>`;
+            }
+            
+            // Show historical match information
+            if (historicalMatch.found) {
+                infoHtml += `<div class="historical-match" style="color:#e74c3c; font-size:0.8em; margin-top:2px;">`;
+                infoHtml += `Found ${historicalMatch.count} time${historicalMatch.count > 1 ? 's' : ''} in history`;
+                if (historicalMatch.matches.length > 0) {
+                    infoHtml += ` (last: ${historicalMatch.matches[0].date})`;
+                }
+                infoHtml += `</div>`;
+            } else {
+                infoHtml += '<div class="historical-match" style="color:#27ae60; font-size:0.8em; margin-top:2px;">New combination</div>';
+            }
+            
+            // Add pattern occurrence information if available
+            if (patternInfo) {
+                const { type, data } = patternInfo;
+                const isDuo = type === 'duo';
+                const typeName = isDuo ? 'duo' : 'trio';
+                const displayNums = data.numbers;
+                const count = data.count || 0;
+                const lastSeen = data.lastSeen || data.date;
+                
+                infoHtml += `<div class="pattern-info" style="font-size:0.8em; color:#3498db; margin-top:2px;">`;
+                infoHtml += `Frequent ${typeName} [${displayNums.join(', ')}] appeared ${count} times`;
+                if (lastSeen) {
+                    infoHtml += ` (last seen: ${formatDate(lastSeen)})`;
+                } else {
+                    infoHtml += ' (date not available)';
+                }
+                infoHtml += `</div>`;
+            }
+            
+            html += `
+                <div class="result-card" style="${historicalMatch.found ? 'border: 2px solid #e74c3c;' : ''} position: relative;">
+                    <div class="result-title">#${i + 1}</div>
+                    <div class="result-numbers">${formattedCombo}</div>
+                    ${infoHtml}
+                </div>`;
+        }
+        
+        html += '</div>';
+        resultsDiv.innerHTML = html;
+    }
+    
     // Cache for new results to avoid recalculating
     const newResultsCache = {
         lastSelected: null,
