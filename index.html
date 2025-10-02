@@ -18,6 +18,7 @@
         <button class="tab-btn" data-tab="new">2 years history</button>
         <button class="tab-btn" data-tab="random">Random</button>
         <button class="tab-btn" data-tab="combo45">4&5 Combo</button>
+        <button class="tab-btn" data-tab="differences">Draw Differences</button>
         <button class="tab-btn" onclick="window.location.href='home.html'">Back to Home</button>
     </nav>
     <!-- Combo Tab Content -->
@@ -57,6 +58,30 @@
     <div class="right-col"></div>
 </div>
     </div>
+    <!-- Draw Differences Tab Content -->
+    <div id="tab-differences" class="tab-content" style="display:none; text-align: left; padding: 0 20px;">
+        <div style="max-width: 1200px; margin: 0 auto; padding: 0 20px;">
+            <div class="generator-panel" style="margin: 20px 0; text-align: left; width: 100%;">
+                <h2 style="color:#27ae60; margin-top: 0; font-size: 22px;">Draw Differences Analyzer</h2>
+                <p style="margin: 10px 0 15px 0; font-size: 15px; color: #444;">Analyze the numerical differences between consecutive Cash 5 draws.</p>
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button id="analyze-differences-btn" class="action-button" style="background-color: #27ae60; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; font-weight: 500;">
+                        Analyze Differences
+                    </button>
+                    <button id="export-differences-csv" class="action-button" style="background-color: #3498db; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; font-weight: 500;">
+                        Export to CSV
+                    </button>
+                </div>
+            </div>
+            <div id="differences-loading" style="display: none; text-align: left; margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 4px;">
+                <div class="loading-spinner" style="display: inline-block; margin-right: 10px; vertical-align: middle;"></div>
+                <p style="display: inline-block; margin: 0; font-size: 15px; color: #555;">Analyzing draw differences...</p>
+            </div>
+            <div id="differences-stats" style="margin: 20px 0; text-align: left;"></div>
+            <div id="differences-results" style="width: 100%; overflow-x: auto;"></div>
+        </div>
+    </div>
+
     <!-- 4&5 Combo Tab Content -->
     <div id="tab-combo45" class="tab-content" style="display:none;">
         <div class="container main-flex">
@@ -111,6 +136,7 @@
                     <button class="cash5-multi-gen-btn" data-count="16">Generate 16</button>
                     <button id="cash5-generate-from-trios" class="cash5-multi-gen-btn" style="background: #9b59b6; color: white; margin-top: 10px; display: block; width: 100%;">From Frequent Trios</button>
                     <button id="cash5-generate-patterned-trios" class="cash5-multi-gen-btn" style="background: #e67e22; color: white; margin-top: 8px; display: block; width: 100%;">Patterned Trio Generator</button>
+                    <button id="cash5-generate-15-last3-20s" class="cash5-multi-gen-btn" style="background: #e74c3c; color: white; margin-top: 8px; display: block; width: 100%;">15 + Last 3 in 20s</button>
                 </div>
                 <div id="cash5-generated-table" style="margin-top:18px;"></div>
                 <div id="cash5-csv-loading" style="margin-top:10px; color:#888; font-size:1.05em;"></div>
