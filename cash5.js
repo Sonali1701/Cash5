@@ -9,17 +9,67 @@ async function loadCash5Data() {
     
     try {
         // Load from local CSV
-        const response = await fetch('cash5.csv');
-        if (!response.ok) throw new Error('Failed to load local CSV');
+        console.log('Fetching Cash5.csv...');
+        const response = await fetch('Cash5.csv');
+        if (!response.ok) throw new Error(`Failed to load CSV: ${response.status} ${response.statusText}`);
         
         const csvText = await response.text();
-        const results = Papa.parse(csvText, { header: true }).data;
+        console.log('Raw CSV text:', csvText.substring(0, 200) + '...'); // Log first 200 chars of CSV
         
-        // Filter out any empty rows and ensure we have valid data
-        cash5Results = results.filter(row => row['Draw Date'] && row['Ball 1']);
+        const parsed = Papa.parse(csvText, { 
+            header: true, 
+            skipEmptyLines: true,
+            transformHeader: header => header.trim() // Trim header whitespace
+        });
+        
+        if (parsed.errors.length > 0) {
+            console.error('CSV parse errors:', parsed.errors);
+            throw new Error('Error parsing CSV data');
+        }
+        
+        const results = parsed.data;
+        console.log('Parsed CSV rows:', results.length);
+        console.log('Sample row:', results[0]);
+        
+        // Log the first row to check the structure
+        if (results.length > 0) {
+            console.log('First row keys:', Object.keys(results[0]));
+            console.log('First row values:', Object.values(results[0]));
+        }
+        
+        // Transform the data to match the expected format
+        cash5Results = results.map((row, index) => {
+            if (!row['Winning Numbers'] && !row['Winning Numbers ']) {
+                console.warn(`Row ${index} has no Winning Numbers:`, row);
+                return null;
+            }
+            
+            const winningNumbers = row['Winning Numbers'] || row['Winning Numbers '];
+            
+            const numbers = winningNumbers.split(/-|–/).map(num => {
+                const n = parseInt(num.trim(), 10);
+                if (isNaN(n)) {
+                    console.warn(`Invalid number '${num}' in row ${index}:`, winningNumbers);
+                }
+                return n;
+            }).filter(n => !isNaN(n));
+            if (numbers.length !== 5 || numbers.some(isNaN)) return null;
+            
+            return {
+                'Draw Date': row['Date'] || row['Date '], // Handle potential trailing space in header
+                'Ball 1': numbers[0].toString(),
+                'Ball 2': numbers[1].toString(),
+                'Ball 3': numbers[2].toString(),
+                'Ball 4': numbers[3].toString(),
+                'Ball 5': numbers[4].toString(),
+                'Multiplier': row['Multiplier'] || ''
+            };
+        }).filter(Boolean); // Remove any null entries from invalid rows
         
         // Sort by date (newest first)
         cash5Results.sort((a, b) => new Date(b['Draw Date']) - new Date(a['Draw Date']));
+        
+        console.log('Loaded and processed', cash5Results.length, 'draws');
         
         // Update the UI with the loaded data
         processAndUpdateUI();
@@ -3104,4 +3154,612 @@ document.getElementById('cash5-twox-hide-dates-btn').onclick = ()=>{datesDiv.sty
 
         });
     }
+});// --- Draw Differences Analysis for Cash 5 ---
+
+// Add event listener for the Analyze Differences button
+document.addEventListener('DOMContentLoaded', async function() {
+    const analyzeBtn = document.getElementById('analyze-differences-btn');
+    if (analyzeBtn) {
+        analyzeBtn.addEventListener('click', async function() {
+            // Check if we have data, if not, try to load it
+            if (!window.cash5Results || window.cash5Results.length === 0) {
+                try {
+                    await loadCash5Data();
+                    analyzeCash5DrawDifferences();
+                } catch (error) {
+                    console.error('Error loading Cash 5 data:', error);
+                    const resultsDiv = document.getElementById('differences-results');
+                    if (resultsDiv) {
+                        resultsDiv.innerHTML = `
+                            <div class="error-message" style="color: #e74c3c; padding: 15px; background-color: #fde8e8; border-radius: 4px; text-align: center;">
+                                <i class="fas fa-exclamation-triangle"></i> Failed to load Cash 5 data. Please try again.
+                            </div>
+                        `;
+                    }
+                }
+            } else {
+                analyzeCash5DrawDifferences();
+            }
+        });
+    }
+    
+    const exportBtn = document.getElementById('export-differences-csv');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', exportCash5DifferencesToCSV);
+    }
 });
+
+// Function to export differences to CSV
+function exportCash5DifferencesToCSV() {
+    try {
+        // Get the results container
+        const resultsDiv = document.getElementById('differences-results');
+        const rows = resultsDiv.querySelectorAll('table tbody tr');
+        
+        // If no rows found, show error
+        if (!rows.length) {
+            alert('No data to export. Please analyze the differences first.');
+            return;
+        }
+        
+        // Create CSV content
+        let csvContent = 'Draw Date,Current Draw,Next Draw,Differences,Total Difference\n';
+        
+        // Add data rows
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length >= 5) {
+                const date = cells[0].textContent.trim();
+                const currentDraw = Array.from(cells[1].querySelectorAll('.ball'))
+                    .map(ball => ball.textContent.trim())
+                    .join(' ');
+                const nextDraw = Array.from(cells[2].querySelectorAll('.ball'))
+                    .map(ball => ball.textContent.trim())
+                    .join(' ');
+                const differences = Array.from(cells[3].querySelectorAll('.difference'))
+                    .map(diff => diff.textContent.trim())
+                    .join(' ');
+                const totalDiff = cells[4].textContent.trim();
+                
+                csvContent += `"${date}","${currentDraw}","${nextDraw}","${differences}","${totalDiff}"\n`;
+            }
+        });
+        
+        // Create download link
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `cash5_draw_differences_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.display = 'none';
+        
+        // Trigger download
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    } catch (error) {
+        console.error('Error exporting to CSV:', error);
+        alert('An error occurred while exporting to CSV. Please try again.');
+    }
+}
+
+// Function to analyze differences between consecutive Cash 5 draws
+function analyzeCash5DrawDifferences() {
+    const resultsDiv = document.getElementById('differences-results');
+    const loadingDiv = document.getElementById('differences-loading');
+    const statsDiv = document.getElementById('differences-stats');
+    
+    // Show loading state
+    loadingDiv.style.display = 'block';
+    resultsDiv.innerHTML = '';
+    statsDiv.style.display = 'none';
+    
+    // Initialize frequency tracking for complete difference sets
+    const differenceSetFrequency = new Map();
+    const allDifferenceSets = [];
+    
+    // Debug: Check if cash5Results is loaded
+    console.log('cash5Results:', cash5Results);
+    if (!cash5Results || cash5Results.length === 0) {
+        loadingDiv.style.display = 'none';
+        resultsDiv.innerHTML = `
+            <div class="error-message" style="color: #e74c3c; padding: 15px; background-color: #fde8e8; border-radius: 4px; text-align: center;">
+                <i class="fas fa-exclamation-triangle"></i> No draw data available. Please load the Cash 5 data first.
+            </div>
+        `;
+        return;
+    }
+    
+    // Use setTimeout to allow UI to update
+    setTimeout(() => {
+        try {
+            // Process draws
+            const processedDraws = [];
+            const allDifferences = [];
+            const differenceStats = {
+                totalComparisons: 0,
+                maxDifference: 0,
+                minDifference: 41, // Max possible difference between 1 and 42 (Cash 5 range)
+                averageDifference: 0,
+                differenceCounts: {},
+                positionStats: Array(5).fill().map(() => ({
+                    max: 0,
+                    min: 41,
+                    sum: 0,
+                    count: 0
+                }))
+            };
+            
+            // Sort draws by date (newest first)
+            const sortedDraws = [...cash5Results].sort((a, b) => new Date(b['Draw Date']) - new Date(a['Draw Date']));
+            
+            // Process each pair of consecutive draws
+            for (let i = 0; i < sortedDraws.length - 1; i++) {
+                const currentDraw = sortedDraws[i];
+                const nextDraw = sortedDraws[i + 1];
+                
+                // Skip if either draw is invalid
+                if (!currentDraw || !nextDraw || !currentDraw['Ball 1'] || !nextDraw['Ball 1']) continue;
+                
+                // Extract numbers for both draws
+                const currentNums = [
+                    parseInt(currentDraw['Ball 1']),
+                    parseInt(currentDraw['Ball 2']),
+                    parseInt(currentDraw['Ball 3']),
+                    parseInt(currentDraw['Ball 4']),
+                    parseInt(currentDraw['Ball 5'])
+                ].sort((a, b) => a - b);
+                
+                const nextNums = [
+                    parseInt(nextDraw['Ball 1']),
+                    parseInt(nextDraw['Ball 2']),
+                    parseInt(nextDraw['Ball 3']),
+                    parseInt(nextDraw['Ball 4']),
+                    parseInt(nextDraw['Ball 5'])
+                ].sort((a, b) => a - b);
+                
+                // Calculate differences for each position (current - previous)
+                const differences = [];
+                
+                // First pass: calculate all differences and track frequencies
+                for (let j = 0; j < 5; j++) {
+                    const diff = currentNums[j] - nextNums[j];
+                    differences.push(diff);
+                    
+                    // Track frequency of this difference
+                    // Track individual difference frequencies in stats
+                    differenceStats.differenceCounts[diff] = (differenceStats.differenceCounts[diff] || 0) + 1;
+                    
+                    // For statistics, we'll use the absolute value
+                    const absDiff = Math.abs(diff);
+                    allDifferences.push(absDiff);
+                    differenceStats.positionStats[j].sum += absDiff;
+                    differenceStats.positionStats[j].count++;
+                    differenceStats.positionStats[j].max = Math.max(differenceStats.positionStats[j].max, absDiff);
+                    differenceStats.positionStats[j].min = Math.min(differenceStats.positionStats[j].min, absDiff);
+                    
+                    differenceStats.maxDifference = Math.max(differenceStats.maxDifference, absDiff);
+                    differenceStats.minDifference = Math.min(differenceStats.minDifference, absDiff);
+                    
+                    // Track absolute difference counts for statistics
+                    differenceStats.differenceCounts[absDiff] = (differenceStats.differenceCounts[absDiff] || 0) + 1;
+                }
+                
+                // Create a unique key for this difference set
+                const differenceKey = differences.join('|');
+                
+                // Calculate even/odd pattern for this difference set
+                const evenOddPattern = differences.map(diff => {
+                    const absDiff = Math.abs(diff);
+                    return absDiff % 2 === 0 ? 'E' : 'O';
+                }).join('');
+                
+                // Track frequency of this even/odd pattern
+                const patternCount = (differenceSetFrequency.get(evenOddPattern) || 0) + 1;
+                differenceSetFrequency.set(evenOddPattern, patternCount);
+                
+                // Add to processed draws with the difference key and even/odd pattern
+                processedDraws.push({
+                    drawDate: currentDraw['Draw Date'],
+                    nextDrawDate: nextDraw['Draw Date'],
+                    currentNums: [...currentNums],
+                    nextNums: [...nextNums],
+                    differences: [...differences],
+                    differenceKey: differenceKey,
+                    evenOddPattern: evenOddPattern,
+                    patternFrequency: patternCount,
+                    totalDifference: differences.reduce((sum, diff) => sum + Math.abs(diff), 0)
+                });
+                
+                // Add to all difference sets for statistics
+                allDifferenceSets.push(differences.join(','));
+                
+                differenceStats.totalComparisons++;
+            }
+            
+            // Calculate average difference
+            if (allDifferences.length > 0) {
+                differenceStats.averageDifference = 
+                    allDifferences.reduce((sum, diff) => sum + diff, 0) / allDifferences.length;
+                
+                // Calculate position averages
+                differenceStats.positionStats.forEach(pos => {
+                    if (pos.count > 0) {
+                        pos.average = pos.sum / pos.count;
+                    }
+                });
+            }
+            
+            // Sort difference counts
+            const sortedDifferences = Object.entries(differenceStats.differenceCounts)
+                .map(([diff, count]) => ({ diff: parseInt(diff), count }))
+                .sort((a, b) => b.count - a.count || a.diff - b.diff);
+            
+            differenceStats.sortedDifferences = sortedDifferences;
+            
+            // Debug: Log the difference set frequencies
+            console.log('Difference Set Frequencies:', Array.from(differenceSetFrequency.entries()));
+            
+            // Render results with the frequency map
+            renderCash5DifferencesResults(processedDraws, differenceStats, differenceSetFrequency);
+            renderCash5DifferencesStats(differenceStats);
+            
+        } catch (error) {
+            console.error('Error analyzing Cash 5 draw differences:', error);
+            const errorMessage = `
+                <div class="error-message" style="color: #e74c3c; padding: 15px; background-color: #fde8e8; border-radius: 4px; text-align: center;">
+                    <i class="fas fa-exclamation-triangle"></i> An error occurred while analyzing draw differences.
+                    <p>${error.message}</p>
+                </div>
+            `;
+            resultsDiv.innerHTML = errorMessage;
+        } finally {
+            loadingDiv.style.display = 'none';
+            statsDiv.style.display = 'block';
+        }
+    }, 100);
+}
+// Function to render the differences results in a table
+function renderCash5DifferencesResults(processedDraws, stats, differenceSetFrequency = new Map()) {
+    const resultsDiv = document.getElementById('differences-results');
+    
+    if (!processedDraws || processedDraws.length === 0) {
+        resultsDiv.innerHTML = `
+            <div class="info-message" style="color: #e67e22; padding: 15px; background-color: #fef9e7; border-radius: 4px; text-align: center;">
+                <i class="fas fa-info-circle"></i> No draw difference data available for the selected criteria.
+            </div>
+        `;
+        return;
+    }
+    
+    // Create table header
+    let html = `
+        <div style="width: 100%; margin: 0; padding: 0 10px; box-sizing: border-box; text-align: left;">
+            <div class="results-container" style="margin: 20px 0; width: 100%; overflow: visible; text-align: left;">
+                <table class="results-table" style="border-collapse: collapse; font-size: 13px; margin: 0 auto; padding: 0; border-spacing: 0; table-layout: auto; min-width: 100%;">
+                <thead>
+                    <tr style="background-color: #27ae60; color: white;">
+                        <th style="padding: 10px; text-align: left; border: 1px solid #ddd; position: sticky; left: 0; z-index: 20;">Date</th>
+                        <th style="padding: 10px; text-align: center; border: 1px solid #ddd;">Draw Numbers</th>
+                        <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Previous Date</th>
+                        <th style="padding: 10px; text-align: center; border: 1px solid #ddd;">Previous Numbers</th>
+                        <th style="padding: 10px; text-align: center; border: 1px solid #ddd;">Differences</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    // Add table rows for each draw comparison
+    processedDraws.forEach((draw, index) => {
+        const rowClass = index % 2 === 0 ? 'even' : 'odd';
+        const formattedDate = new Date(draw.drawDate).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+        
+        // Format the previous date (nextDrawDate)
+        const formattedPrevDate = draw.nextDrawDate ? new Date(draw.nextDrawDate).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        }) : 'N/A';
+        
+        // Calculate row class based on total difference
+        let diffClass = '';
+        const totalDiff = draw.totalDifference;
+        if (totalDiff <= 10) diffClass = 'low-diff';
+        else if (totalDiff >= 40) diffClass = 'high-diff';
+        
+        // Format numbers without even/odd indicators
+        const formatNumbers = (nums) => {
+            return nums.map(num => 
+                `<span style="display: inline-block; min-width: 24px; text-align: center; margin: 0 1px; 
+                    padding: 2px 4px; border-radius: 3px; background-color: #f5f5f5; font-weight: bold;
+                    color: #333;">
+                    ${num}
+                </span>`
+            ).join(' ');
+        };
+        
+        // Format differences (current - previous) with arrows, colors, and even/odd indicators
+        const formatDifferences = () => {
+            // Create a key for this difference set
+            const differenceKey = draw.differences.join('|');
+            
+            // Get the even/odd pattern for this difference set
+            const evenOddPattern = draw.differences.map(d => Math.abs(d) % 2 === 0 ? 'E' : 'O').join('');
+            
+            // Get the frequency of this even/odd pattern
+            const patternFreq = differenceSetFrequency.get(evenOddPattern) || 0;
+            
+            // Debug log for the current difference set and its frequency
+            console.log('Difference set:', differenceKey, 
+                       'Even/Odd Pattern:', evenOddPattern,
+                       'Pattern Frequency:', patternFreq);
+            
+            // Update the draw object with pattern information
+            draw.differenceKey = differenceKey;
+            draw.evenOddPattern = evenOddPattern;
+            draw.patternFrequency = patternFreq;
+            
+            // Generate all number cells first
+            const numberCells = draw.differences.map((diff, i) => {
+                const current = draw.currentNums[i];
+                const previous = draw.nextNums[i];
+                const isIncrease = diff > 0;
+                const isEven = previous % 2 === 0;  // Even/odd based on previous number
+                const arrow = isIncrease ? '↑' : diff === 0 ? '→' : '↓';
+                const sign = diff > 0 ? '+' : diff === 0 ? '±' : '';
+                const absDiff = Math.abs(diff);
+                let cellClass = absDiff <= 2 ? 'low-diff' : (absDiff >= 10 ? 'high-diff' : '');
+                
+                return `<span style="display: inline-block; min-width: 24px; text-align: center; 
+                    margin: 0 1px; padding: 2px 4px; border-radius: 3px; 
+                    background-color: #f5f5f5; font-weight: bold;" class="${cellClass}">
+                    ${sign}${diff}${arrow}<span style="font-size: 0.7em; color: ${isEven ? '#2980b6' : '#e74c3c'}; margin-left: 1px;">
+                    ${isEven ? 'E' : 'O'}</span>
+                </span>`;
+            }).join(' ');
+            
+            // Add the pattern frequency text below the numbers
+            const patternFrequency = draw.patternFrequency || 0;
+            const frequencyText = `<div style="
+                text-align: center;
+                color: #7f8c8d;
+                font-size: 0.85em;
+                margin-top: 4px;
+                white-space: nowrap;
+            ">Pattern of even/odd ${patternFrequency}x</div>`;
+            
+            return `<div style="display: flex; flex-direction: column; align-items: center;">
+                <div>${numberCells}</div>
+                ${frequencyText}
+            </div>`;
+        };
+        
+        html += `
+            <tr class="${rowClass} ${diffClass}" style="cursor: pointer;" 
+                onclick="this.nextElementSibling.style.display = 
+                    (this.nextElementSibling.style.display === 'none' || !this.nextElementSibling.style.display) ? 'table-row' : 'none';">
+                <td style="padding: 10px; border: 1px solid #ddd; white-space: nowrap;">${formattedDate}</td>
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${formatNumbers(draw.currentNums)}</td>
+                <td style="padding: 10px; border: 1px solid #ddd; white-space: nowrap;">${formattedPrevDate}</td>
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${formatNumbers(draw.nextNums)}</td>
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${formatDifferences()}</td>
+            </tr>
+            <tr style="display: none; background-color: #f9f9f9;">
+                <td colspan="5" style="padding: 10px; border: 1px solid #ddd;">
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 200px; margin: 5px 0;">
+                            <strong>Current Draw:</strong> ${draw.currentNums.join('-')}
+                        </div>
+                        <div style="flex: 1; min-width: 200px; margin: 5px 0;">
+                            <strong>Previous Draw:</strong> ${draw.nextNums.join('-')}
+                        </div>
+                        <div style="flex: 1; min-width: 200px; margin: 5px 0;">
+                            <strong>Differences:</strong> ${draw.differences.join('-')}
+                        </div>
+                        <div style="flex: 1; min-width: 100px; margin: 5px 0; text-align: right;">
+                            <strong>Total Difference:</strong> ${totalDiff}
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+    
+    // Close table and container
+    html += `
+                    </tbody>
+                </table>
+            </div>
+            <style>
+                .low-diff { background-color: #e8f5e9 !important; }
+                .high-diff { background-color: #ffebee !important; }
+                .even { background-color: #ffffff !important; }
+                .odd { background-color: #f9f9f9 !important; }
+                                .results-container {
+                    width: 100% !important;
+                    max-width: 100% !important;
+                    overflow: visible !important;
+                    margin: 20px 0 !important;
+                    padding: 0 10px !important;
+                    position: relative !important;
+                    display: block !important;
+                    text-align: left !important;
+                }
+                .results-table {
+                    border-collapse: collapse !important;
+                    margin: 0 auto !important;
+                    padding: 0 !important;
+                    table-layout: auto !important;
+                    width: auto !important;
+                    min-width: 100% !important;
+                    border: 1px solid #ddd !important;
+                    font-size: 14px !important;
+                }
+                .results-table th {
+                    position: relative !important;
+                    background-color: #27ae60 !important;
+                    color: white !important;
+                    padding: 10px 8px !important;
+                    text-align: center !important;
+                    border: 1px solid #ddd !important;
+                    font-weight: bold !important;
+                    font-size: 13px !important;
+                    white-space: nowrap !important;
+                }
+                .results-table td {
+                    padding: 8px 6px !important;
+                    text-align: center !important;
+                    border: 1px solid #eee !important;
+                    white-space: nowrap !important;
+                    overflow: visible !important;
+                    background-color: inherit !important;
+                    font-size: 13px !important;
+                    min-width: 40px !important;
+                }
+                .results-table tbody tr:hover {
+                    background-color: #f1f8e9 !important;
+                }
+                .results-table tbody tr:hover td {
+                    position: relative !important;
+                    z-index: 5 !important;
+                    background-color: #f1f8e9 !important;
+                }
+                .results-table tbody tr:nth-child(even) {
+                    background-color: #f9f9f9 !important;
+                }
+                .results-table tbody tr:nth-child(odd) {
+                    background-color: #ffffff !important;
+                }
+                .results-table tbody tr td:first-child {
+                    position: relative !important;
+                    left: auto !important;
+                    z-index: 1 !important;
+                    background-color: inherit !important;
+                    font-weight: bold !important;
+                    text-align: left !important;
+                    padding: 8px 12px !important;
+                    min-width: 100px !important;
+                }
+                .results-table tbody tr td {
+                    text-align: center !important;
+                    vertical-align: middle !important;
+                }
+                .results-table tbody tr td div {
+                    display: flex !important;
+                    flex-direction: column !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    min-height: 100% !important;
+                }
+                .results-table tbody tr:hover td:first-child,
+                .results-table tbody tr:hover td:last-child {
+                    z-index: 15 !important;
+                }
+                @media (max-width: 1200px) {
+                    .results-table {
+                        font-size: 12px;
+                    }
+                    .results-table th,
+                    .results-table td {
+                        padding: 6px 8px;
+                    }
+                }
+            </style>
+        </div>
+    </div>
+    `;
+    
+    resultsDiv.innerHTML = html;
+}
+// Function to render the differences statistics
+function renderCash5DifferencesStats(stats) {
+    const statsContent = document.getElementById('differences-stats-content');
+    if (!statsContent) return;
+    
+    // Format position stats
+    const positionStatsHtml = stats.positionStats.map((pos, index) => {
+        return `
+            <tr>
+                <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Position #${index + 1}</td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${pos.min.toFixed(1)}</td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${pos.max.toFixed(1)}</td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${pos.average.toFixed(2)}</td>
+            </tr>
+        `;
+    }).join('');
+    
+    // Format most common differences
+    const commonDiffsHtml = stats.sortedDifferences.slice(0, 10).map(item => {
+        const percentage = (item.count / (stats.totalComparisons * 5) * 100).toFixed(1);
+        return `
+            <div style="display: flex; margin-bottom: 5px; align-items: center;">
+                <div style="width: 50px; font-weight: bold;">${item.diff}</div>
+                <div style="flex-grow: 1; margin: 0 10px;">
+                    <div style="height: 20px; background-color: #27ae60; width: ${percentage}%;"></div>
+                </div>
+                <div style="width: 100px; text-align: right;">${item.count} (${percentage}%)</div>
+            </div>
+        `;
+    }).join('');
+    
+    // Create stats HTML
+    const statsHtml = `
+        <div class="stats-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+            <div class="stat-box" style="background-color: #f8f9fa; border-radius: 8px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <h3 style="color: #27ae60; margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 8px;">Summary</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>Total Comparisons:</div>
+                    <div style="text-align: right; font-weight: bold;">${stats.totalComparisons.toLocaleString()}</div>
+                    
+                    <div>Average Difference:</div>
+                    <div style="text-align: right; font-weight: bold;">${stats.averageDifference.toFixed(2)}</div>
+                    
+                    <div>Min Difference:</div>
+                    <div style="text-align: right; font-weight: bold;">${stats.minDifference}</div>
+                    
+                    <div>Max Difference:</div>
+                    <div style="text-align: right; font-weight: bold;">${stats.maxDifference}</div>
+                </div>
+            </div>
+            
+            <div class="stat-box" style="background-color: #f8f9fa; border-radius: 8px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <h3 style="color: #27ae60; margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 8px;">Position Statistics</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background-color: #f1f1f1;">
+                            <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Position</th>
+                            <th style="padding: 8px; border: 1px solid #ddd; text-align: right;">Min</th>
+                            <th style="padding: 8px; border: 1px solid #ddd; text-align: right;">Max</th>
+                            <th style="padding: 8px; border: 1px solid #ddd; text-align: right;">Avg</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${positionStatsHtml}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="stat-box" style="background-color: #f8f9fa; border-radius: 8px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <h3 style="color: #27ae60; margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 8px;">Most Common Differences</h3>
+                <div style="margin-top: 10px;">
+                    ${commonDiffsHtml}
+                </div>
+            </div>
+        </div>
+        
+        <style>
+            .stat-box h3 { color: #27ae60; }
+            .stat-box { margin-bottom: 20px; }
+            .stat-box:last-child { margin-bottom: 0; }
+            @media (min-width: 768px) {
+                .stat-box { margin-bottom: 0; }
+            }
+        </style>
+    `;
+    
+    statsContent.innerHTML = statsHtml;
+}
